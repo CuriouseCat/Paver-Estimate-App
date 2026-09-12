@@ -14,3 +14,7 @@ obj/
 ## OS files
 .DS_Store
 Thumbs.db
+
+## Code signing secrets (never commit these)
+*.pfx
+*.p12
