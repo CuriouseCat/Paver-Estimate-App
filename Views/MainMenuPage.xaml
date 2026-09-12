@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AllAroundEstimates.Views.MainMenuPage"
+             Title="All Around Estimates">
+
+    <Grid>
+
+        <VerticalStackLayout VerticalOptions="Center"
+                              HorizontalOptions="Center"
+                              Spacing="10"
+                              Padding="40">
+
+            <Label Text="All Around Paver Restoration"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label Text="All Around Estimates"
+                   FontSize="16"
+                   TextColor="Gray"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,30" />
+
+            <Button Text="Create New Estimate"
+                    Clicked="OnNewEstimateClicked"
+                    WidthRequest="240" />
+
+            <Button Text="Create Change Order"
+                    Clicked="OnChangeOrderClicked"
+                    WidthRequest="240" />
+
+        </VerticalStackLayout>
+
+        <Button Text="Upload Logo"
+                Clicked="OnUploadLogoClicked"
+                HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="0,15,15,0"
+                Padding="10,6"
+                FontSize="12" />
+
+    </Grid>
+
+</ContentPage>
