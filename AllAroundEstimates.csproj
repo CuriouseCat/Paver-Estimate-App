@@ -38,6 +38,17 @@
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 	</PropertyGroup>
 
+	<!-- Keep the Android Release linker/AOT off: several dependencies (reflection-based System.Text.Json
+	     calls, QuestPDF) are not fully verified trim/AOT-safe on this SDK, and a fully trimmed build has
+	     crashed on-device (Pixel 9, Galaxy S26 Ultra) immediately after the splash screen. -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release' AND $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">
+		<PublishTrimmed>false</PublishTrimmed>
+		<TrimMode>none</TrimMode>
+		<RunAOTCompilation>false</RunAOTCompilation>
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+		<AndroidLinkMode>None</AndroidLinkMode>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.png" Color="#F3F4F6" />

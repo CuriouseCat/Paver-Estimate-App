@@ -12,7 +12,7 @@ public static class EstimateStorage
 
     public static void SaveEstimates(List<SavedEstimate> estimates)
     {
-        var json = JsonSerializer.Serialize(estimates, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(estimates, EstimateJsonContext.Default.ListSavedEstimate);
         File.WriteAllText(FilePath, json);
     }
 
@@ -25,7 +25,7 @@ public static class EstimateStorage
         if (string.IsNullOrWhiteSpace(json))
             return new List<SavedEstimate>();
 
-        return JsonSerializer.Deserialize<List<SavedEstimate>>(json) ?? new List<SavedEstimate>();
+        return JsonSerializer.Deserialize(json, EstimateJsonContext.Default.ListSavedEstimate) ?? new List<SavedEstimate>();
     }
 
     public static void AddEstimate(SavedEstimate estimate)
