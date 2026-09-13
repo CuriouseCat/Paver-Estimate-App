@@ -8,15 +8,15 @@ public class TimeCard
     public string EmployeeName { get; set; } = string.Empty;
     public DateTime WeekStartDate { get; set; }
 
-    public DayPunch Monday { get; set; } = new();
-    public DayPunch Tuesday { get; set; } = new();
-    public DayPunch Wednesday { get; set; } = new();
-    public DayPunch Thursday { get; set; } = new();
-    public DayPunch Friday { get; set; } = new();
-    public DayPunch Saturday { get; set; } = new();
-    public DayPunch Sunday { get; set; } = new();
+    public DayAttendance Monday { get; set; } = new();
+    public DayAttendance Tuesday { get; set; } = new();
+    public DayAttendance Wednesday { get; set; } = new();
+    public DayAttendance Thursday { get; set; } = new();
+    public DayAttendance Friday { get; set; } = new();
+    public DayAttendance Saturday { get; set; } = new();
+    public DayAttendance Sunday { get; set; } = new();
 
-    public DayPunch GetDay(DayOfWeek dayOfWeek) => dayOfWeek switch
+    public DayAttendance GetDay(DayOfWeek dayOfWeek) => dayOfWeek switch
     {
         DayOfWeek.Monday => Monday,
         DayOfWeek.Tuesday => Tuesday,
@@ -29,9 +29,12 @@ public class TimeCard
     };
 
     [JsonIgnore]
-    public decimal TotalHours =>
-        Monday.Hours + Tuesday.Hours + Wednesday.Hours + Thursday.Hours +
-        Friday.Hours + Saturday.Hours + Sunday.Hours;
+    public int DaysPresent =>
+        new[] { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday }
+            .Count(d => d.Status == AttendanceStatus.Present);
+
+    [JsonIgnore]
+    public string AttendanceSummaryText => $"{DaysPresent} of 7 days present";
 
     [JsonIgnore]
     public DateTime WeekEndDate => WeekStartDate.AddDays(6);

@@ -299,16 +299,14 @@ public static class PdfGenerator
             {
                 table.ColumnsDefinition(columns =>
                 {
-                    columns.RelativeColumn(3);
-                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(4);
                     columns.RelativeColumn(2);
                 });
 
                 table.Header(header =>
                 {
                     header.Cell().Element(HeaderCellStyle).Text("Day");
-                    header.Cell().Element(HeaderCellStyle).Text("Clock In / Out");
-                    header.Cell().Element(HeaderCellStyle).AlignRight().Text("Hours");
+                    header.Cell().Element(HeaderCellStyle).AlignRight().Text("Attendance");
 
                     static IContainer HeaderCellStyle(IContainer c) => c
                         .DefaultTextStyle(x => x.Bold())
@@ -316,15 +314,17 @@ public static class PdfGenerator
                         .BorderBottom(1).BorderColor(Colors.Black);
                 });
 
-                void AddRow(string dayName, DateTime date, DayPunch punch)
+                void AddRow(string dayName, DateTime date, DayAttendance attendance)
                 {
-                    var punchText = punch.ClockInTime.HasValue
-                        ? $"{punch.ClockInTime.Value:h:mm tt} - {(punch.ClockOutTime.HasValue ? punch.ClockOutTime.Value.ToString("h:mm tt") : "-")}"
-                        : "-";
+                    var (statusText, statusColor) = attendance.Status switch
+                    {
+                        AttendanceStatus.Present => ("Present", Colors.Green.Darken1),
+                        AttendanceStatus.Absent => ("Absent", Colors.Red.Darken1),
+                        _ => ("Not Marked", Colors.Grey.Darken1)
+                    };
 
                     table.Cell().Element(CellStyle).Text($"{dayName} ({date:MMM d})");
-                    table.Cell().Element(CellStyle).Text(punchText);
-                    table.Cell().Element(CellStyle).AlignRight().Text(punch.Hours.ToString("N1"));
+                    table.Cell().Element(CellStyle).AlignRight().Text(statusText).FontColor(statusColor).Bold();
 
                     static IContainer CellStyle(IContainer c) => c
                         .PaddingVertical(6)
@@ -348,8 +348,8 @@ public static class PdfGenerator
         {
             column.Item().AlignRight().Width(230).Row(r =>
             {
-                r.RelativeItem().Text("Total Hours:").Bold();
-                r.ConstantItem(90).AlignRight().Text(timeCard.TotalHours.ToString("N1")).Bold();
+                r.RelativeItem().Text("Days Present:").Bold();
+                r.ConstantItem(90).AlignRight().Text($"{timeCard.DaysPresent} of 7").Bold();
             });
 
             column.Item().PaddingTop(35).Width(260).BorderBottom(1).BorderColor(Colors.Black);
@@ -502,7 +502,7 @@ public static class PdfGenerator
         y = DrawTimeCardRow(canvas, y, "Sunday", timeCard.WeekStartDate.AddDays(6), timeCard.Sunday);
 
         var totalsY = PageHeight - Margin - 60;
-        DrawTotalsRow(canvas, totalsY, "Total Hours:", timeCard.TotalHours.ToString("N1"), bold: true);
+        DrawTotalsRow(canvas, totalsY, "Days Present:", $"{timeCard.DaysPresent} of 7", bold: true);
         DrawSignatureLine(canvas, "Employee Signature & Date");
 
         document.FinishPage(page);
@@ -513,25 +513,26 @@ public static class PdfGenerator
     {
         var boldPaint = TextPaint(10, bold: true);
         canvas.DrawText("Day", Margin, y, boldPaint);
-        canvas.DrawText("Clock In / Out", Margin + 150, y, boldPaint);
-        DrawRightAligned(canvas, "Hours", PageWidth - Margin, y, boldPaint);
+        DrawRightAligned(canvas, "Attendance", PageWidth - Margin, y, boldPaint);
 
         y += 6;
         canvas.DrawLine(Margin, y, PageWidth - Margin, y, LinePaint(1));
         return y + 18;
     }
 
-    private static float DrawTimeCardRow(Canvas canvas, float y, string dayName, DateTime date, DayPunch punch)
+    private static float DrawTimeCardRow(Canvas canvas, float y, string dayName, DateTime date, DayAttendance attendance)
     {
         var textPaint = TextPaint(10);
         canvas.DrawText($"{dayName} ({date:MMM d})", Margin, y, textPaint);
 
-        var punchText = punch.ClockInTime.HasValue
-            ? $"{punch.ClockInTime.Value:h:mm tt} - {(punch.ClockOutTime.HasValue ? punch.ClockOutTime.Value.ToString("h:mm tt") : "-")}"
-            : "-";
-        canvas.DrawText(punchText, Margin + 150, y, textPaint);
+        var (statusText, statusColor) = attendance.Status switch
+        {
+            AttendanceStatus.Present => ("Present", Color.Rgb(46, 125, 50)),
+            AttendanceStatus.Absent => ("Absent", Color.Rgb(198, 40, 40)),
+            _ => ("Not Marked", DarkGray)
+        };
 
-        DrawRightAligned(canvas, punch.Hours.ToString("N1"), PageWidth - Margin, y, textPaint);
+        DrawRightAligned(canvas, statusText, PageWidth - Margin, y, TextPaint(10, statusColor, bold: true));
 
         y += 8;
         canvas.DrawLine(Margin, y, PageWidth - Margin, y, LinePaint(0.5f, LightGray));

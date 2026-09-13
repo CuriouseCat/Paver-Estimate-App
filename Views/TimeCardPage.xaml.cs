@@ -11,7 +11,6 @@ public partial class TimeCardPage : ContentPage
         DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
     };
 
-    private readonly Dictionary<DayOfWeek, Entry> _hoursEntries = new();
     private TimeCard? _currentTimeCard;
 
     public TimeCardPage()
@@ -54,142 +53,91 @@ public partial class TimeCardPage : ContentPage
         SaveButton.IsVisible = timeCard.IsEditable;
 
         DaysContainer.Children.Clear();
-        _hoursEntries.Clear();
 
         var today = DateTime.Now.Date;
 
         for (var i = 0; i < WeekDayOrder.Length; i++)
         {
             var dayOfWeek = WeekDayOrder[i];
-            var dayPunch = timeCard.GetDay(dayOfWeek);
+            var dayAttendance = timeCard.GetDay(dayOfWeek);
             var dayDate = timeCard.WeekStartDate.AddDays(i);
             var isToday = dayDate == today;
 
+            // Highlight today with a colored outline rather than a filled background, so there's
+            // no risk of theme-dependent text-color contrast issues (a filled light background
+            // previously made text invisible in dark mode).
             var dayCard = new Border
             {
-                Stroke = Colors.LightGray,
-                StrokeThickness = 1,
-                Padding = new Thickness(10, 8),
-                BackgroundColor = isToday ? Color.FromArgb("#F0F4FF") : Colors.Transparent
+                Stroke = isToday ? Colors.MediumPurple : Colors.LightGray,
+                StrokeThickness = isToday ? 2 : 1,
+                Padding = new Thickness(12, 10)
             };
 
-            var stack = new VerticalStackLayout { Spacing = 4 };
+            var row = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto)
+                }
+            };
 
-            // "Today" gets an explicit light background above, so its text needs an explicit dark
-            // color too -- otherwise it inherits the app's dark-theme default (white), which is
-            // invisible against that light background. Other days keep the transparent background
-            // and default theme-adaptive text color, which is already correct against it.
             var dayLabel = new Label
             {
                 Text = $"{dayOfWeek} ({dayDate:MMM d}){(isToday ? "  •  Today" : string.Empty)}",
+                VerticalOptions = LayoutOptions.Center,
                 FontAttributes = FontAttributes.Bold
             };
-            if (isToday)
-            {
-                dayLabel.TextColor = Colors.Black;
-            }
-            stack.Add(dayLabel);
+            Grid.SetColumn(dayLabel, 0);
 
-            var statusLabel = new Label
+            var statusButton = new Button
             {
-                Text = FormatPunchStatus(dayPunch),
-                FontSize = 12,
-                TextColor = Colors.Gray
+                WidthRequest = 110,
+                FontSize = 13,
+                IsEnabled = timeCard.IsEditable
             };
-            stack.Add(statusLabel);
+            ApplyStatusStyle(statusButton, dayAttendance.Status);
 
-            if (isToday && timeCard.IsEditable)
+            statusButton.Clicked += (_, _) =>
             {
-                var buttonRow = new HorizontalStackLayout { Spacing = 10 };
-
-                var clockInButton = new Button
-                {
-                    Text = "Clock In",
-                    FontSize = 12,
-                    Padding = new Thickness(12, 6),
-                    IsEnabled = dayPunch.ClockInTime is null
-                };
-
-                var clockOutButton = new Button
-                {
-                    Text = "Clock Out",
-                    FontSize = 12,
-                    Padding = new Thickness(12, 6),
-                    IsEnabled = dayPunch.ClockInTime is not null && dayPunch.ClockOutTime is null
-                };
-
-                clockInButton.Clicked += (_, _) =>
-                {
-                    dayPunch.ClockInTime = DateTime.Now;
-                    dayPunch.ClockOutTime = null;
-                    statusLabel.Text = FormatPunchStatus(dayPunch);
-                    clockInButton.IsEnabled = false;
-                    clockOutButton.IsEnabled = true;
-                };
-
-                clockOutButton.Clicked += (_, _) =>
-                {
-                    if (dayPunch.ClockInTime is null)
-                        return;
-
-                    dayPunch.ClockOutTime = DateTime.Now;
-                    dayPunch.Hours = (decimal)(dayPunch.ClockOutTime.Value - dayPunch.ClockInTime.Value).TotalHours;
-
-                    statusLabel.Text = FormatPunchStatus(dayPunch);
-                    clockOutButton.IsEnabled = false;
-
-                    if (_hoursEntries.TryGetValue(dayOfWeek, out var hoursEntry))
-                    {
-                        hoursEntry.Text = dayPunch.Hours.ToString("0.##");
-                    }
-
-                    UpdateTotal(_currentTimeCard!);
-                };
-
-                buttonRow.Add(clockInButton);
-                buttonRow.Add(clockOutButton);
-                stack.Add(buttonRow);
-            }
-
-            var hoursRow = new HorizontalStackLayout { Spacing = 8 };
-            var hoursLabel = new Label { Text = "Hours:", VerticalOptions = LayoutOptions.Center };
-            var hoursEntry = new Entry
-            {
-                Text = dayPunch.Hours.ToString("0.##"),
-                Keyboard = Keyboard.Numeric,
-                WidthRequest = 80,
-                IsReadOnly = !timeCard.IsEditable
+                dayAttendance.Status = NextStatus(dayAttendance.Status);
+                ApplyStatusStyle(statusButton, dayAttendance.Status);
+                UpdateSummary(timeCard);
             };
-            if (isToday)
-            {
-                hoursLabel.TextColor = Colors.Black;
-                hoursEntry.TextColor = Colors.Black;
-            }
-            _hoursEntries[dayOfWeek] = hoursEntry;
-            hoursRow.Add(hoursLabel);
-            hoursRow.Add(hoursEntry);
-            stack.Add(hoursRow);
 
-            dayCard.Content = stack;
+            Grid.SetColumn(statusButton, 1);
+
+            row.Add(dayLabel);
+            row.Add(statusButton);
+
+            dayCard.Content = row;
             DaysContainer.Children.Add(dayCard);
         }
 
-        UpdateTotal(timeCard);
+        UpdateSummary(timeCard);
     }
 
-    private static string FormatPunchStatus(DayPunch punch)
+    private static AttendanceStatus NextStatus(AttendanceStatus current) => current switch
     {
-        if (punch.ClockInTime is null)
-            return "Not clocked in";
+        AttendanceStatus.NotMarked => AttendanceStatus.Present,
+        AttendanceStatus.Present => AttendanceStatus.Absent,
+        AttendanceStatus.Absent => AttendanceStatus.NotMarked,
+        _ => AttendanceStatus.NotMarked
+    };
 
-        var inText = punch.ClockInTime.Value.ToString("h:mm tt");
-        var outText = punch.ClockOutTime?.ToString("h:mm tt") ?? "still clocked in";
-        return $"In: {inText}   Out: {outText}";
+    private static void ApplyStatusStyle(Button button, AttendanceStatus status)
+    {
+        (button.Text, button.BackgroundColor, button.TextColor) = status switch
+        {
+            AttendanceStatus.Present => ("Present", Colors.Green, Colors.White),
+            AttendanceStatus.Absent => ("Absent", Colors.Red, Colors.White),
+            _ => ("Not Marked", Colors.LightGray, Colors.Black)
+        };
     }
 
-    private void UpdateTotal(TimeCard timeCard)
+    private void UpdateSummary(TimeCard timeCard)
     {
-        TotalHoursLabel.Text = $"Total Hours: {timeCard.TotalHours:N1}";
+        AttendanceSummaryLabel.Text = timeCard.AttendanceSummaryText;
     }
 
     private void RefreshHistory(string employeeName)
@@ -204,45 +152,15 @@ public partial class TimeCardPage : ContentPage
         }
     }
 
-    /// <summary>
-    /// Copies whatever's currently in the Hours entries into the model, so Save and Export both
-    /// reflect the latest on-screen values (including unsaved edits) rather than only what was
-    /// last persisted.
-    /// </summary>
-    private async Task<bool> SyncHoursFromEntriesAsync()
-    {
-        if (_currentTimeCard is null)
-            return false;
-
-        foreach (var dayOfWeek in WeekDayOrder)
-        {
-            if (!_hoursEntries.TryGetValue(dayOfWeek, out var entry))
-                continue;
-
-            if (!decimal.TryParse(entry.Text, out var hours))
-            {
-                await DisplayAlertAsync("Invalid Input", $"Please enter a valid number of hours for {dayOfWeek}.", "OK");
-                return false;
-            }
-
-            _currentTimeCard.GetDay(dayOfWeek).Hours = hours;
-        }
-
-        return true;
-    }
-
     private async void OnSaveClicked(object sender, EventArgs e)
     {
         if (_currentTimeCard is null)
             return;
 
-        if (!await SyncHoursFromEntriesAsync())
-            return;
-
         try
         {
             TimeCardStorage.SaveTimeCard(_currentTimeCard);
-            UpdateTotal(_currentTimeCard);
+            UpdateSummary(_currentTimeCard);
             RefreshHistory(_currentTimeCard.EmployeeName);
             await DisplayAlertAsync("Saved", "Time card saved.", "OK");
         }
@@ -259,9 +177,6 @@ public partial class TimeCardPage : ContentPage
             await DisplayAlertAsync("No Time Card", "Find or start a time card first.", "OK");
             return;
         }
-
-        if (!await SyncHoursFromEntriesAsync())
-            return;
 
         try
         {
