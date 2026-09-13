@@ -1,4 +1,6 @@
+#if WINDOWS
 using CommunityToolkit.Maui.Storage;
+#endif
 
 namespace AllAroundEstimates.Services;
 

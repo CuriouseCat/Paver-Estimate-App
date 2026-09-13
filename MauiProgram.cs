@@ -1,6 +1,6 @@
-using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 #if !ANDROID
+using CommunityToolkit.Maui;
 using QuestPDF.Infrastructure;
 #endif
 
@@ -20,7 +20,11 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
+#if !ANDROID
+			// Not referenced on Android at all -- its only real usage (FileSaver) is Windows-only,
+			// and this registration ran unconditionally on every launch regardless of platform.
 			.UseMauiCommunityToolkit()
+#endif
 			.ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

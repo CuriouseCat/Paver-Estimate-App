@@ -77,7 +77,13 @@
 		     is the confirmed cause of the immediate on-device crash. Excluded from Android entirely;
 		     see PdfGenerator.cs for the platform-specific stub. -->
 		<PackageReference Include="QuestPDF" Version="2024.10.3" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))!='android'" />
-		<PackageReference Include="CommunityToolkit.Maui" Version="9.1.0" />
+		<!-- CommunityToolkit.Maui's only actual usage in this app (FileSaver, in PdfExportService.cs)
+		     is inside an #if WINDOWS block; Android's export path uses core Share instead. Its
+		     startup registration (.UseMauiCommunityToolkit() in MauiProgram.cs) still ran
+		     unconditionally on every launch though. Excluded from Android as the next crash-isolation
+		     step: the blank-template diagnostic app (no CommunityToolkit.Maui reference at all) does
+		     NOT crash on-device, while this app does. -->
+		<PackageReference Include="CommunityToolkit.Maui" Version="9.1.0" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))!='android'" />
 	</ItemGroup>
 
 </Project>
