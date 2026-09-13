@@ -7,7 +7,12 @@
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="8">
 
-            <Label Text="Customer Name" />
+            <Label Text="Pull Up a Previous Estimate (optional)" />
+            <Picker x:Name="PreviousEstimatePicker"
+                    Title="Select a customer's previous estimate..."
+                    SelectedIndexChanged="OnPreviousEstimateSelected" />
+
+            <Label Text="Customer Name" Margin="0,10,0,0" />
             <Entry x:Name="CustomerNameEntry" Placeholder="Customer name" />
 
             <Label Text="Original Estimate Number" Margin="0,10,0,0" />

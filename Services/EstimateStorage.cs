@@ -34,4 +34,17 @@ public static class EstimateStorage
         estimates.Add(estimate);
         SaveEstimates(estimates);
     }
+
+    /// <summary>
+    /// Original estimates only (excludes change orders), newest first, for the change order
+    /// page's "pull up a customer's previous estimate" lookup.
+    /// </summary>
+    public static List<SavedEstimate> GetPreviousEstimates()
+    {
+        return LoadEstimates()
+            .Where(e => !e.IsChangeOrder)
+            .OrderBy(e => e.CustomerName, StringComparer.OrdinalIgnoreCase)
+            .ThenByDescending(e => e.DateCreated)
+            .ToList();
+    }
 }

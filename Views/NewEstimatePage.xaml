@@ -10,6 +10,21 @@
             <Label Text="Customer Name" />
             <Entry x:Name="CustomerNameEntry" Placeholder="Customer name" />
 
+            <Border Stroke="LightGray" StrokeThickness="1" Padding="12" Margin="0,12,0,0">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Customer Contact Information" FontAttributes="Bold" />
+
+                    <Label Text="Phone" />
+                    <Entry x:Name="CustomerPhoneEntry" Keyboard="Telephone" Placeholder="(555) 555-5555" />
+
+                    <Label Text="Email" />
+                    <Entry x:Name="CustomerEmailEntry" Keyboard="Email" Placeholder="customer@example.com" />
+
+                    <Label Text="Address" />
+                    <Entry x:Name="CustomerAddressEntry" Placeholder="Street, City, State ZIP" />
+                </VerticalStackLayout>
+            </Border>
+
             <Label Text="Total Square Footage" Margin="0,10,0,0" />
             <Entry x:Name="SquareFootageEntry" Keyboard="Numeric" Placeholder="0" />
 
@@ -27,6 +42,20 @@
 
             <Label Text="Extra Costs ($)" Margin="0,10,0,0" />
             <Entry x:Name="ExtraCostsEntry" Keyboard="Numeric" Placeholder="0.00" />
+
+            <Border Stroke="LightGray" StrokeThickness="1" Padding="12" Margin="0,12,0,0">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Custom Charges" FontAttributes="Bold" />
+
+                    <VerticalStackLayout x:Name="CustomChargesContainer" Spacing="8" />
+
+                    <Button Text="+ Add Custom Charge"
+                            Clicked="OnAddCustomChargeClicked"
+                            HorizontalOptions="Start"
+                            FontSize="12"
+                            Padding="10,6" />
+                </VerticalStackLayout>
+            </Border>
 
             <BoxView HeightRequest="1" Color="LightGray" Margin="0,16" />
 

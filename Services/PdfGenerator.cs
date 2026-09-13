@@ -134,6 +134,13 @@ public static class PdfGenerator
             column.Item().Text($"Customer: {data.CustomerName}").Bold();
             column.Item().Text($"Estimate #: {data.EstimateNumber}").FontSize(9).FontColor(Colors.Grey.Darken1);
 
+            if (!string.IsNullOrWhiteSpace(data.CustomerPhone))
+                column.Item().Text($"Phone: {data.CustomerPhone}").FontSize(9).FontColor(Colors.Grey.Darken1);
+            if (!string.IsNullOrWhiteSpace(data.CustomerEmail))
+                column.Item().Text($"Email: {data.CustomerEmail}").FontSize(9).FontColor(Colors.Grey.Darken1);
+            if (!string.IsNullOrWhiteSpace(data.CustomerAddress))
+                column.Item().Text($"Address: {data.CustomerAddress}").FontSize(9).FontColor(Colors.Grey.Darken1);
+
             column.Item().PaddingTop(15).Table(table =>
             {
                 table.ColumnsDefinition(columns =>
@@ -173,6 +180,11 @@ public static class PdfGenerator
                 AddRow("Base Material Cost", "1", data.BaseMaterialCost, data.BaseMaterialCost);
                 AddRow("Labor", $"{data.LaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
                 AddRow("Extra Costs", "1", data.ExtraCosts, data.ExtraCosts);
+
+                foreach (var charge in data.CustomCharges)
+                {
+                    AddRow(charge.Description, "1", charge.Amount, charge.Amount);
+                }
             });
         });
     }
@@ -181,17 +193,14 @@ public static class PdfGenerator
     {
         container.Column(column =>
         {
+            // Margin is intentionally not itemized on the customer-facing PDF; it's still included
+            // in GrandTotal internally, just not broken out as its own line.
             column.Item().AlignRight().Width(230).Column(totals =>
             {
                 totals.Item().Row(r =>
                 {
                     r.RelativeItem().Text("Subtotal:");
                     r.ConstantItem(90).AlignRight().Text(data.Subtotal.ToString("C2"));
-                });
-                totals.Item().PaddingTop(2).Row(r =>
-                {
-                    r.RelativeItem().Text("Margin (15%):");
-                    r.ConstantItem(90).AlignRight().Text(data.MarginAmount.ToString("C2"));
                 });
                 totals.Item().PaddingTop(4).BorderTop(1).BorderColor(Colors.Black).PaddingTop(4).Row(r =>
                 {
@@ -294,7 +303,24 @@ public static class PdfGenerator
         canvas.DrawText($"Customer: {data.CustomerName}", Margin, y, TextPaint(11, bold: true));
         y += 16;
         canvas.DrawText($"Estimate #: {data.EstimateNumber}", Margin, y, TextPaint(9, DarkGray));
-        y += 25;
+        y += 13;
+
+        if (!string.IsNullOrWhiteSpace(data.CustomerPhone))
+        {
+            canvas.DrawText($"Phone: {data.CustomerPhone}", Margin, y, TextPaint(9, DarkGray));
+            y += 13;
+        }
+        if (!string.IsNullOrWhiteSpace(data.CustomerEmail))
+        {
+            canvas.DrawText($"Email: {data.CustomerEmail}", Margin, y, TextPaint(9, DarkGray));
+            y += 13;
+        }
+        if (!string.IsNullOrWhiteSpace(data.CustomerAddress))
+        {
+            canvas.DrawText($"Address: {data.CustomerAddress}", Margin, y, TextPaint(9, DarkGray));
+            y += 13;
+        }
+        y += 12;
 
         y = DrawTableHeader(canvas, y);
         y = DrawTableRow(canvas, y, "Paver Material", $"{data.SquareFootage:N0} sq ft", data.PaverPricePerSqFt, data.SquareFootage * data.PaverPricePerSqFt);
@@ -302,11 +328,17 @@ public static class PdfGenerator
         y = DrawTableRow(canvas, y, "Labor", $"{data.LaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
         y = DrawTableRow(canvas, y, "Extra Costs", "1", data.ExtraCosts, data.ExtraCosts);
 
-        var totalsY = PageHeight - Margin - 90;
+        foreach (var charge in data.CustomCharges)
+        {
+            y = DrawTableRow(canvas, y, charge.Description, "1", charge.Amount, charge.Amount);
+        }
+
+        // Margin is intentionally not itemized on the customer-facing PDF; it's still included
+        // in GrandTotal internally, just not broken out as its own line.
+        var totalsY = PageHeight - Margin - 74;
         DrawTotalsRow(canvas, totalsY, "Subtotal:", data.Subtotal, bold: false);
-        DrawTotalsRow(canvas, totalsY + 16, "Margin (15%):", data.MarginAmount, bold: false);
-        canvas.DrawLine(PageWidth - Margin - 230, totalsY + 24, PageWidth - Margin, totalsY + 24, LinePaint(1));
-        DrawTotalsRow(canvas, totalsY + 40, "Grand Total:", data.GrandTotal, bold: true);
+        canvas.DrawLine(PageWidth - Margin - 230, totalsY + 8, PageWidth - Margin, totalsY + 8, LinePaint(1));
+        DrawTotalsRow(canvas, totalsY + 24, "Grand Total:", data.GrandTotal, bold: true);
         DrawSignatureLine(canvas);
 
         document.FinishPage(page);

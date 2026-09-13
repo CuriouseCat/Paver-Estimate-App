@@ -5,11 +5,43 @@ namespace AllAroundEstimates.Views;
 
 public partial class ChangeOrderPage : ContentPage
 {
+    private List<SavedEstimate> _previousEstimates = new();
     private ChangeOrderData? _currentChangeOrder;
 
     public ChangeOrderPage()
     {
         InitializeComponent();
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        try
+        {
+            _previousEstimates = EstimateStorage.GetPreviousEstimates();
+            PreviousEstimatePicker.ItemsSource = _previousEstimates
+                .Select(e => $"{e.CustomerName} — {e.EstimateNumber} — {e.TotalAmount:C2}")
+                .ToList();
+        }
+        catch
+        {
+            // Best-effort only; the picker just stays empty and the fields below can still be
+            // filled in manually.
+            _previousEstimates = new List<SavedEstimate>();
+        }
+    }
+
+    private void OnPreviousEstimateSelected(object sender, EventArgs e)
+    {
+        var index = PreviousEstimatePicker.SelectedIndex;
+        if (index < 0 || index >= _previousEstimates.Count)
+            return;
+
+        var selected = _previousEstimates[index];
+        CustomerNameEntry.Text = selected.CustomerName;
+        OriginalEstimateNumberEntry.Text = selected.EstimateNumber;
+        OriginalTotalEntry.Text = selected.TotalAmount.ToString("F2");
     }
 
     private ChangeOrderData? BuildChangeOrderData()
@@ -62,6 +94,7 @@ public partial class ChangeOrderPage : ContentPage
         EstimateStorage.AddEstimate(new SavedEstimate
         {
             CustomerName = data.CustomerName,
+            EstimateNumber = data.OriginalEstimateNumber,
             TotalAmount = data.RevisedTotal,
             IsChangeOrder = true
         });
