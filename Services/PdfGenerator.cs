@@ -266,6 +266,96 @@ public static class PdfGenerator
             column.Item().PaddingTop(2).Text("Customer Signature & Date").FontSize(9).FontColor(Colors.Grey.Darken1);
         });
     }
+
+    public static void GenerateTimeCardPdf(Stream stream, TimeCard timeCard)
+    {
+        EnsureFontsRegistered();
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.Letter);
+                page.Margin(30);
+                page.DefaultTextStyle(x => x.FontFamily(FontFamily).FontSize(11));
+
+                page.Header().Element(c => ComposeHeader(c, "TIME CARD", DateTime.Now));
+                page.Content().PaddingTop(15).Element(c => ComposeTimeCardBody(c, timeCard));
+                page.Footer().Element(c => ComposeTimeCardFooter(c, timeCard));
+            });
+        });
+
+        document.GeneratePdf(stream);
+    }
+
+    private static void ComposeTimeCardBody(IContainer container, TimeCard timeCard)
+    {
+        container.Column(column =>
+        {
+            column.Item().Text($"Employee: {timeCard.EmployeeName}").Bold();
+            column.Item().Text(timeCard.WeekRangeText).FontSize(9).FontColor(Colors.Grey.Darken1);
+
+            column.Item().PaddingTop(15).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(2);
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderCellStyle).Text("Day");
+                    header.Cell().Element(HeaderCellStyle).Text("Clock In / Out");
+                    header.Cell().Element(HeaderCellStyle).AlignRight().Text("Hours");
+
+                    static IContainer HeaderCellStyle(IContainer c) => c
+                        .DefaultTextStyle(x => x.Bold())
+                        .PaddingVertical(5)
+                        .BorderBottom(1).BorderColor(Colors.Black);
+                });
+
+                void AddRow(string dayName, DateTime date, DayPunch punch)
+                {
+                    var punchText = punch.ClockInTime.HasValue
+                        ? $"{punch.ClockInTime.Value:h:mm tt} - {(punch.ClockOutTime.HasValue ? punch.ClockOutTime.Value.ToString("h:mm tt") : "-")}"
+                        : "-";
+
+                    table.Cell().Element(CellStyle).Text($"{dayName} ({date:MMM d})");
+                    table.Cell().Element(CellStyle).Text(punchText);
+                    table.Cell().Element(CellStyle).AlignRight().Text(punch.Hours.ToString("N1"));
+
+                    static IContainer CellStyle(IContainer c) => c
+                        .PaddingVertical(6)
+                        .BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2);
+                }
+
+                AddRow("Monday", timeCard.WeekStartDate, timeCard.Monday);
+                AddRow("Tuesday", timeCard.WeekStartDate.AddDays(1), timeCard.Tuesday);
+                AddRow("Wednesday", timeCard.WeekStartDate.AddDays(2), timeCard.Wednesday);
+                AddRow("Thursday", timeCard.WeekStartDate.AddDays(3), timeCard.Thursday);
+                AddRow("Friday", timeCard.WeekStartDate.AddDays(4), timeCard.Friday);
+                AddRow("Saturday", timeCard.WeekStartDate.AddDays(5), timeCard.Saturday);
+                AddRow("Sunday", timeCard.WeekStartDate.AddDays(6), timeCard.Sunday);
+            });
+        });
+    }
+
+    private static void ComposeTimeCardFooter(IContainer container, TimeCard timeCard)
+    {
+        container.Column(column =>
+        {
+            column.Item().AlignRight().Width(230).Row(r =>
+            {
+                r.RelativeItem().Text("Total Hours:").Bold();
+                r.ConstantItem(90).AlignRight().Text(timeCard.TotalHours.ToString("N1")).Bold();
+            });
+
+            column.Item().PaddingTop(35).Width(260).BorderBottom(1).BorderColor(Colors.Black);
+            column.Item().PaddingTop(2).Text("Employee Signature & Date").FontSize(9).FontColor(Colors.Grey.Darken1);
+        });
+    }
 }
 #elif ANDROID
 using Android.Graphics;
@@ -387,6 +477,67 @@ public static class PdfGenerator
         WriteDocumentToStream(document, stream);
     }
 
+    public static void GenerateTimeCardPdf(Stream stream, TimeCard timeCard)
+    {
+        using var document = new PdfDocument();
+        using var pageInfo = new PdfDocument.PageInfo.Builder((int)PageWidth, (int)PageHeight, 1).Create();
+        var page = document.StartPage(pageInfo)!;
+        var canvas = page.Canvas!;
+
+        var y = DrawHeader(canvas, "TIME CARD", DateTime.Now);
+
+        y += 15;
+        canvas.DrawText($"Employee: {timeCard.EmployeeName}", Margin, y, TextPaint(11, bold: true));
+        y += 16;
+        canvas.DrawText(timeCard.WeekRangeText, Margin, y, TextPaint(9, DarkGray));
+        y += 25;
+
+        y = DrawTimeCardTableHeader(canvas, y);
+        y = DrawTimeCardRow(canvas, y, "Monday", timeCard.WeekStartDate, timeCard.Monday);
+        y = DrawTimeCardRow(canvas, y, "Tuesday", timeCard.WeekStartDate.AddDays(1), timeCard.Tuesday);
+        y = DrawTimeCardRow(canvas, y, "Wednesday", timeCard.WeekStartDate.AddDays(2), timeCard.Wednesday);
+        y = DrawTimeCardRow(canvas, y, "Thursday", timeCard.WeekStartDate.AddDays(3), timeCard.Thursday);
+        y = DrawTimeCardRow(canvas, y, "Friday", timeCard.WeekStartDate.AddDays(4), timeCard.Friday);
+        y = DrawTimeCardRow(canvas, y, "Saturday", timeCard.WeekStartDate.AddDays(5), timeCard.Saturday);
+        y = DrawTimeCardRow(canvas, y, "Sunday", timeCard.WeekStartDate.AddDays(6), timeCard.Sunday);
+
+        var totalsY = PageHeight - Margin - 60;
+        DrawTotalsRow(canvas, totalsY, "Total Hours:", timeCard.TotalHours.ToString("N1"), bold: true);
+        DrawSignatureLine(canvas, "Employee Signature & Date");
+
+        document.FinishPage(page);
+        WriteDocumentToStream(document, stream);
+    }
+
+    private static float DrawTimeCardTableHeader(Canvas canvas, float y)
+    {
+        var boldPaint = TextPaint(10, bold: true);
+        canvas.DrawText("Day", Margin, y, boldPaint);
+        canvas.DrawText("Clock In / Out", Margin + 150, y, boldPaint);
+        DrawRightAligned(canvas, "Hours", PageWidth - Margin, y, boldPaint);
+
+        y += 6;
+        canvas.DrawLine(Margin, y, PageWidth - Margin, y, LinePaint(1));
+        return y + 18;
+    }
+
+    private static float DrawTimeCardRow(Canvas canvas, float y, string dayName, DateTime date, DayPunch punch)
+    {
+        var textPaint = TextPaint(10);
+        canvas.DrawText($"{dayName} ({date:MMM d})", Margin, y, textPaint);
+
+        var punchText = punch.ClockInTime.HasValue
+            ? $"{punch.ClockInTime.Value:h:mm tt} - {(punch.ClockOutTime.HasValue ? punch.ClockOutTime.Value.ToString("h:mm tt") : "-")}"
+            : "-";
+        canvas.DrawText(punchText, Margin + 150, y, textPaint);
+
+        DrawRightAligned(canvas, punch.Hours.ToString("N1"), PageWidth - Margin, y, textPaint);
+
+        y += 8;
+        canvas.DrawLine(Margin, y, PageWidth - Margin, y, LinePaint(0.5f, LightGray));
+        return y + 16;
+    }
+
     private static void WriteDocumentToStream(PdfDocument document, Stream stream) =>
         document.WriteTo(stream);
 
@@ -484,19 +635,22 @@ public static class PdfGenerator
         y += 16;
     }
 
-    private static void DrawTotalsRow(Canvas canvas, float y, string label, decimal value, bool bold)
+    private static void DrawTotalsRow(Canvas canvas, float y, string label, decimal value, bool bold) =>
+        DrawTotalsRow(canvas, y, label, value.ToString("C2"), bold);
+
+    private static void DrawTotalsRow(Canvas canvas, float y, string label, string formattedValue, bool bold)
     {
         const float totalsLeft = PageWidth - Margin - 230;
         var paint = TextPaint(10, bold: bold);
         canvas.DrawText(label, totalsLeft, y, paint);
-        DrawRightAligned(canvas, value.ToString("C2"), PageWidth - Margin, y, paint);
+        DrawRightAligned(canvas, formattedValue, PageWidth - Margin, y, paint);
     }
 
-    private static void DrawSignatureLine(Canvas canvas)
+    private static void DrawSignatureLine(Canvas canvas, string label = "Customer Signature & Date")
     {
         var y = PageHeight - Margin - 15;
         canvas.DrawLine(Margin, y, Margin + 260, y, LinePaint(1));
-        canvas.DrawText("Customer Signature & Date", Margin, y + 12, TextPaint(9, DarkGray));
+        canvas.DrawText(label, Margin, y + 12, TextPaint(9, DarkGray));
     }
 
     private static void DrawRightAligned(Canvas canvas, string text, float rightX, float y, Paint paint)

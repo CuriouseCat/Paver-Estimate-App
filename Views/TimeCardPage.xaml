@@ -30,11 +30,13 @@
 
                 <Label x:Name="TotalHoursLabel" FontAttributes="Bold" />
 
-                <Button x:Name="SaveButton"
-                        Text="Save Time Card"
-                        Clicked="OnSaveClicked"
-                        HorizontalOptions="Center"
-                        Margin="0,10,0,0" />
+                <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,10,0,0">
+                    <Button x:Name="SaveButton"
+                            Text="Save Time Card"
+                            Clicked="OnSaveClicked" />
+                    <Button Text="Export PDF"
+                            Clicked="OnExportClicked" />
+                </HorizontalStackLayout>
 
             </VerticalStackLayout>
 

@@ -75,11 +75,20 @@ public partial class TimeCardPage : ContentPage
 
             var stack = new VerticalStackLayout { Spacing = 4 };
 
-            stack.Add(new Label
+            // "Today" gets an explicit light background above, so its text needs an explicit dark
+            // color too -- otherwise it inherits the app's dark-theme default (white), which is
+            // invisible against that light background. Other days keep the transparent background
+            // and default theme-adaptive text color, which is already correct against it.
+            var dayLabel = new Label
             {
                 Text = $"{dayOfWeek} ({dayDate:MMM d}){(isToday ? "  •  Today" : string.Empty)}",
                 FontAttributes = FontAttributes.Bold
-            });
+            };
+            if (isToday)
+            {
+                dayLabel.TextColor = Colors.Black;
+            }
+            stack.Add(dayLabel);
 
             var statusLabel = new Label
             {
@@ -143,7 +152,7 @@ public partial class TimeCardPage : ContentPage
             }
 
             var hoursRow = new HorizontalStackLayout { Spacing = 8 };
-            hoursRow.Add(new Label { Text = "Hours:", VerticalOptions = LayoutOptions.Center });
+            var hoursLabel = new Label { Text = "Hours:", VerticalOptions = LayoutOptions.Center };
             var hoursEntry = new Entry
             {
                 Text = dayPunch.Hours.ToString("0.##"),
@@ -151,7 +160,13 @@ public partial class TimeCardPage : ContentPage
                 WidthRequest = 80,
                 IsReadOnly = !timeCard.IsEditable
             };
+            if (isToday)
+            {
+                hoursLabel.TextColor = Colors.Black;
+                hoursEntry.TextColor = Colors.Black;
+            }
             _hoursEntries[dayOfWeek] = hoursEntry;
+            hoursRow.Add(hoursLabel);
             hoursRow.Add(hoursEntry);
             stack.Add(hoursRow);
 
@@ -189,10 +204,15 @@ public partial class TimeCardPage : ContentPage
         }
     }
 
-    private async void OnSaveClicked(object sender, EventArgs e)
+    /// <summary>
+    /// Copies whatever's currently in the Hours entries into the model, so Save and Export both
+    /// reflect the latest on-screen values (including unsaved edits) rather than only what was
+    /// last persisted.
+    /// </summary>
+    private async Task<bool> SyncHoursFromEntriesAsync()
     {
         if (_currentTimeCard is null)
-            return;
+            return false;
 
         foreach (var dayOfWeek in WeekDayOrder)
         {
@@ -202,11 +222,22 @@ public partial class TimeCardPage : ContentPage
             if (!decimal.TryParse(entry.Text, out var hours))
             {
                 await DisplayAlertAsync("Invalid Input", $"Please enter a valid number of hours for {dayOfWeek}.", "OK");
-                return;
+                return false;
             }
 
             _currentTimeCard.GetDay(dayOfWeek).Hours = hours;
         }
+
+        return true;
+    }
+
+    private async void OnSaveClicked(object sender, EventArgs e)
+    {
+        if (_currentTimeCard is null)
+            return;
+
+        if (!await SyncHoursFromEntriesAsync())
+            return;
 
         try
         {
@@ -218,6 +249,32 @@ public partial class TimeCardPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlertAsync("Error", ex.Message, "OK");
+        }
+    }
+
+    private async void OnExportClicked(object sender, EventArgs e)
+    {
+        if (_currentTimeCard is null)
+        {
+            await DisplayAlertAsync("No Time Card", "Find or start a time card first.", "OK");
+            return;
+        }
+
+        if (!await SyncHoursFromEntriesAsync())
+            return;
+
+        try
+        {
+            using var stream = new MemoryStream();
+            PdfGenerator.GenerateTimeCardPdf(stream, _currentTimeCard);
+
+            var safeName = string.Join("_", _currentTimeCard.EmployeeName.Split(Path.GetInvalidFileNameChars()));
+            var fileName = $"TimeCard_{safeName}_{_currentTimeCard.WeekStartDate:yyyyMMdd}.pdf";
+            await PdfExportService.ExportPdfAsync(fileName, stream);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Export Failed", ex.Message, "OK");
         }
     }
 }
