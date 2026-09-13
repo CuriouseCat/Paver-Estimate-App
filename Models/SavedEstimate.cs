@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace AllAroundEstimates.Models;
 
 public class SavedEstimate
@@ -8,4 +10,7 @@ public class SavedEstimate
     public string EstimateNumber { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public bool IsChangeOrder { get; set; }
+
+    [JsonIgnore]
+    public string DisplayText => $"{CustomerName} — {EstimateNumber} — {TotalAmount:C2}";
 }

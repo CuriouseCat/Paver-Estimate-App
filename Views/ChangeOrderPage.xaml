@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:AllAroundEstimates.Models"
              x:Class="AllAroundEstimates.Views.ChangeOrderPage"
              Title="Change Order">
 
@@ -11,9 +12,27 @@
             <Entry x:Name="CustomerSearchEntry"
                    Placeholder="Search by customer name..."
                    TextChanged="OnCustomerSearchTextChanged" />
-            <Picker x:Name="PreviousEstimatePicker"
-                    Title="Select a customer's previous estimate..."
-                    SelectedIndexChanged="OnPreviousEstimateSelected" />
+
+            <Border Stroke="LightGray" StrokeThickness="1" Padding="0" Margin="0,4,0,0">
+                <CollectionView x:Name="PreviousEstimatesList"
+                                HeightRequest="160"
+                                SelectionMode="Single"
+                                SelectionChanged="OnPreviousEstimateSelected">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:SavedEstimate">
+                            <Grid Padding="10,8">
+                                <Label Text="{Binding DisplayText}" LineBreakMode="TailTruncation" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="No matching estimates."
+                               TextColor="Gray"
+                               FontSize="12"
+                               Padding="10,8" />
+                    </CollectionView.EmptyView>
+                </CollectionView>
+            </Border>
 
             <Label Text="Customer Name" Margin="0,10,0,0" />
             <Entry x:Name="CustomerNameEntry" Placeholder="Customer name" />
