@@ -42,6 +42,11 @@ public partial class MainMenuPage : ContentPage
         await Shell.Current.GoToAsync(nameof(ChangeOrderPage));
     }
 
+    private async void OnTimeCardClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(nameof(TimeCardPage));
+    }
+
     private async void OnUploadLogoClicked(object sender, EventArgs e)
     {
         try

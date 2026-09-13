@@ -30,6 +30,10 @@
                     Clicked="OnChangeOrderClicked"
                     WidthRequest="240" />
 
+            <Button Text="Time Card"
+                    Clicked="OnTimeCardClicked"
+                    WidthRequest="240" />
+
         </VerticalStackLayout>
 
         <Button Text="Upload Logo"

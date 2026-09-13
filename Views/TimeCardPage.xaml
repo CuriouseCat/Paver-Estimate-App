@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:AllAroundEstimates.Models"
+             x:Class="AllAroundEstimates.Views.TimeCardPage"
+             Title="Time Card">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="8">
+
+            <Label Text="Your Name" />
+            <Entry x:Name="EmployeeNameEntry" Placeholder="Enter your name" />
+
+            <Button Text="Find / Start This Week's Time Card"
+                    Clicked="OnFindClicked"
+                    Margin="0,10,0,0" />
+
+            <VerticalStackLayout x:Name="TimeCardForm" IsVisible="False" Spacing="8" Margin="0,16,0,0">
+
+                <Label x:Name="WeekRangeLabel" FontAttributes="Bold" />
+                <Label x:Name="LockedNoticeLabel"
+                       Text="This time card is from a previous week and is locked."
+                       TextColor="Red"
+                       FontSize="12"
+                       IsVisible="False" />
+
+                <VerticalStackLayout x:Name="DaysContainer" Spacing="10" Margin="0,10,0,0" />
+
+                <BoxView HeightRequest="1" Color="LightGray" Margin="0,16" />
+
+                <Label x:Name="TotalHoursLabel" FontAttributes="Bold" />
+
+                <Button x:Name="SaveButton"
+                        Text="Save Time Card"
+                        Clicked="OnSaveClicked"
+                        HorizontalOptions="Center"
+                        Margin="0,10,0,0" />
+
+            </VerticalStackLayout>
+
+            <Border Stroke="LightGray" StrokeThickness="1" Padding="0" Margin="0,20,0,0">
+                <VerticalStackLayout>
+                    <Label Text="Previous Time Cards" FontAttributes="Bold" Padding="10,8" />
+                    <CollectionView x:Name="HistoryList" HeightRequest="160">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:TimeCard">
+                                <Grid Padding="10,6" ColumnDefinitions="*,Auto">
+                                    <Label Grid.Column="0" Text="{Binding WeekRangeText}" />
+                                    <Label Grid.Column="1" Text="{Binding TotalHours, StringFormat='{0:N1} hrs'}" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <Label Text="No time cards yet." TextColor="Gray" FontSize="12" Padding="10,8" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
