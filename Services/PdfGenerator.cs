@@ -1,23 +1,31 @@
 using AllAroundEstimates.Models;
+using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using IContainer = QuestPDF.Infrastructure.IContainer;
 using Colors = QuestPDF.Helpers.Colors;
+using FontManager = QuestPDF.Drawing.FontManager;
 
 namespace AllAroundEstimates.Services;
 
 public static class PdfGenerator
 {
+    private const string FontFamily = "Open Sans";
+    private static bool _fontsRegistered;
+    private static readonly object FontRegistrationLock = new();
+
     public static void GenerateEstimatePdf(Stream stream, EstimateData data)
     {
+        EnsureFontsRegistered();
+
         var document = Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.Letter);
                 page.Margin(30);
-                page.DefaultTextStyle(x => x.FontSize(11));
+                page.DefaultTextStyle(x => x.FontFamily(FontFamily).FontSize(11));
 
                 page.Header().Element(c => ComposeHeader(c, "ESTIMATE", data.Date));
                 page.Content().PaddingTop(15).Element(c => ComposeEstimateBody(c, data));
@@ -30,13 +38,15 @@ public static class PdfGenerator
 
     public static void GenerateChangeOrderPdf(Stream stream, ChangeOrderData data)
     {
+        EnsureFontsRegistered();
+
         var document = Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.Letter);
                 page.Margin(30);
-                page.DefaultTextStyle(x => x.FontSize(11));
+                page.DefaultTextStyle(x => x.FontFamily(FontFamily).FontSize(11));
 
                 page.Header().Element(c => ComposeHeader(c, "CHANGE ORDER", data.Date));
                 page.Content().PaddingTop(15).Element(c => ComposeChangeOrderBody(c, data));
@@ -45,6 +55,42 @@ public static class PdfGenerator
         });
 
         document.GeneratePdf(stream);
+    }
+
+    /// <summary>
+    /// QuestPDF defaults to a bundled font (Calibri-family) when no FontFamily is set explicitly.
+    /// That font doesn't exist on Android/Linux, and QuestPDF throws when it can't resolve a
+    /// requested family. Registering our own bundled TrueType font removes any dependency on
+    /// fonts being pre-installed on the host OS.
+    /// </summary>
+    private static void EnsureFontsRegistered()
+    {
+        if (_fontsRegistered)
+            return;
+
+        lock (FontRegistrationLock)
+        {
+            if (_fontsRegistered)
+                return;
+
+            try
+            {
+                using var regularStream = FileSystem.OpenAppPackageFileAsync("OpenSans-Regular.ttf").GetAwaiter().GetResult();
+                FontManager.RegisterFont(regularStream);
+
+                using var semiboldStream = FileSystem.OpenAppPackageFileAsync("OpenSans-Semibold.ttf").GetAwaiter().GetResult();
+                FontManager.RegisterFont(semiboldStream);
+            }
+            catch
+            {
+                // Best-effort: if bundled fonts can't be loaded, QuestPDF falls back to its own default,
+                // which is still preferable to crashing this registration step.
+            }
+            finally
+            {
+                _fontsRegistered = true;
+            }
+        }
     }
 
     private static void ComposeHeader(IContainer container, string documentType, DateTime date)

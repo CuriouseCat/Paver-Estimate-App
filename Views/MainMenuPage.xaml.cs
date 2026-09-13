@@ -7,6 +7,31 @@ public partial class MainMenuPage : ContentPage
         InitializeComponent();
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        try
+        {
+            await SeedDefaultLogoAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Startup Warning", $"Could not prepare the default logo: {ex.Message}", "OK");
+        }
+    }
+
+    private static async Task SeedDefaultLogoAsync()
+    {
+        var logoPath = Path.Combine(FileSystem.AppDataDirectory, "company_logo.png");
+        if (File.Exists(logoPath))
+            return;
+
+        using var sourceStream = await FileSystem.OpenAppPackageFileAsync("company_logo_default.png");
+        using var destinationStream = File.Create(logoPath);
+        await sourceStream.CopyToAsync(destinationStream);
+    }
+
     private async void OnNewEstimateClicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync(nameof(NewEstimatePage));
