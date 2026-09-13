@@ -35,6 +35,7 @@
                     IsReadOnly="True"
                     HeightRequest="150"
                     BackgroundColor="#F5F5F5"
+                    TextColor="Black"
                     FontFamily="Courier New" />
 
             <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,16,0,0">
