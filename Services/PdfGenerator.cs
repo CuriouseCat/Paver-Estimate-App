@@ -1,4 +1,8 @@
 using AllAroundEstimates.Models;
+
+namespace AllAroundEstimates.Services;
+
+#if !ANDROID
 using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -6,8 +10,6 @@ using QuestPDF.Infrastructure;
 using IContainer = QuestPDF.Infrastructure.IContainer;
 using Colors = QuestPDF.Helpers.Colors;
 using FontManager = QuestPDF.Drawing.FontManager;
-
-namespace AllAroundEstimates.Services;
 
 public static class PdfGenerator
 {
@@ -256,3 +258,23 @@ public static class PdfGenerator
         });
     }
 }
+#else
+/// <summary>
+/// QuestPDF ships no native Android runtime library (verified against the latest release as of
+/// this writing). Referencing it on Android causes MSBuild to bundle QuestPDF's incompatible Linux
+/// desktop native library instead, which crashes the app at the native level the moment anything
+/// touches it. QuestPDF is excluded from the Android build entirely (see the csproj); this stub
+/// keeps the app's other features working and fails PDF export with a message the UI can show,
+/// instead of crashing.
+/// </summary>
+public static class PdfGenerator
+{
+    private const string NotSupportedMessage = "PDF export is not currently available on Android.";
+
+    public static void GenerateEstimatePdf(Stream stream, EstimateData data) =>
+        throw new PlatformNotSupportedException(NotSupportedMessage);
+
+    public static void GenerateChangeOrderPdf(Stream stream, ChangeOrderData data) =>
+        throw new PlatformNotSupportedException(NotSupportedMessage);
+}
+#endif

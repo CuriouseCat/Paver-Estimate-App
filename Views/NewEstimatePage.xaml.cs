@@ -90,13 +90,12 @@ public partial class NewEstimatePage : ContentPage
 
         _currentEstimate = data;
 
-        using var stream = new MemoryStream();
-        PdfGenerator.GenerateEstimatePdf(stream, data);
-
-        var fileName = $"Estimate_{data.EstimateNumber}.pdf";
-
         try
         {
+            using var stream = new MemoryStream();
+            PdfGenerator.GenerateEstimatePdf(stream, data);
+
+            var fileName = $"Estimate_{data.EstimateNumber}.pdf";
             await PdfExportService.ExportPdfAsync(fileName, stream);
         }
         catch (Exception ex)

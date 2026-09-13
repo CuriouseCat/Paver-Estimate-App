@@ -80,13 +80,12 @@ public partial class ChangeOrderPage : ContentPage
 
         _currentChangeOrder = data;
 
-        using var stream = new MemoryStream();
-        PdfGenerator.GenerateChangeOrderPdf(stream, data);
-
-        var fileName = $"ChangeOrder_{data.OriginalEstimateNumber}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
-
         try
         {
+            using var stream = new MemoryStream();
+            PdfGenerator.GenerateChangeOrderPdf(stream, data);
+
+            var fileName = $"ChangeOrder_{data.OriginalEstimateNumber}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
             await PdfExportService.ExportPdfAsync(fileName, stream);
         }
         catch (Exception ex)
