@@ -8,6 +8,9 @@
         <VerticalStackLayout Padding="20" Spacing="8">
 
             <Label Text="Pull Up a Previous Estimate (optional)" />
+            <Entry x:Name="CustomerSearchEntry"
+                   Placeholder="Search by customer name..."
+                   TextChanged="OnCustomerSearchTextChanged" />
             <Picker x:Name="PreviousEstimatePicker"
                     Title="Select a customer's previous estimate..."
                     SelectedIndexChanged="OnPreviousEstimateSelected" />

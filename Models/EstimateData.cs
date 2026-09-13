@@ -14,13 +14,15 @@ public class EstimateData
     public decimal BaseMaterialCost { get; set; }
     public decimal LaborHours { get; set; }
     public decimal HourlyLaborRate { get; set; }
+    public decimal NumberOfEmployees { get; set; }
     public decimal ExtraCosts { get; set; }
     public List<CustomCharge> CustomCharges { get; set; } = new();
 
     public decimal MaterialTotal => (SquareFootage * PaverPricePerSqFt) + BaseMaterialCost;
-    public decimal LaborTotal => LaborHours * HourlyLaborRate;
+    public decimal TotalLaborHours => LaborHours * NumberOfEmployees;
+    public decimal LaborTotal => TotalLaborHours * HourlyLaborRate;
     public decimal CustomChargesTotal => CustomCharges.Sum(c => c.Amount);
     public decimal Subtotal => MaterialTotal + LaborTotal + ExtraCosts + CustomChargesTotal;
-    public decimal MarginAmount => MaterialTotal * 0.15m;
+    public decimal MarginAmount => MaterialTotal * 0.20m;
     public decimal GrandTotal => Subtotal + MarginAmount;
 }

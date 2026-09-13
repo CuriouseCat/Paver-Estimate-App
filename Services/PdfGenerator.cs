@@ -178,7 +178,7 @@ public static class PdfGenerator
 
                 AddRow("Paver Material", $"{data.SquareFootage:N0} sq ft", data.PaverPricePerSqFt, data.SquareFootage * data.PaverPricePerSqFt);
                 AddRow("Base Material Cost", "1", data.BaseMaterialCost, data.BaseMaterialCost);
-                AddRow("Labor", $"{data.LaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
+                AddRow($"Labor ({data.NumberOfEmployees:N0} employees)", $"{data.TotalLaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
                 AddRow("Extra Costs", "1", data.ExtraCosts, data.ExtraCosts);
 
                 foreach (var charge in data.CustomCharges)
@@ -325,7 +325,7 @@ public static class PdfGenerator
         y = DrawTableHeader(canvas, y);
         y = DrawTableRow(canvas, y, "Paver Material", $"{data.SquareFootage:N0} sq ft", data.PaverPricePerSqFt, data.SquareFootage * data.PaverPricePerSqFt);
         y = DrawTableRow(canvas, y, "Base Material Cost", "1", data.BaseMaterialCost, data.BaseMaterialCost);
-        y = DrawTableRow(canvas, y, "Labor", $"{data.LaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
+        y = DrawTableRow(canvas, y, $"Labor ({data.NumberOfEmployees:N0} employees)", $"{data.TotalLaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
         y = DrawTableRow(canvas, y, "Extra Costs", "1", data.ExtraCosts, data.ExtraCosts);
 
         foreach (var charge in data.CustomCharges)

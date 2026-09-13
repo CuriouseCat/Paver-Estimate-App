@@ -48,6 +48,7 @@ public partial class NewEstimatePage : ContentPage
             !decimal.TryParse(PaverPriceEntry.Text, out var paverPrice) ||
             !decimal.TryParse(BaseMaterialCostEntry.Text, out var baseCost) ||
             !decimal.TryParse(LaborHoursEntry.Text, out var laborHours) ||
+            !decimal.TryParse(NumberOfEmployeesEntry.Text, out var numberOfEmployees) ||
             !decimal.TryParse(HourlyRateEntry.Text, out var hourlyRate) ||
             !decimal.TryParse(ExtraCostsEntry.Text, out var extraCosts))
         {
@@ -79,6 +80,7 @@ public partial class NewEstimatePage : ContentPage
             PaverPricePerSqFt = paverPrice,
             BaseMaterialCost = baseCost,
             LaborHours = laborHours,
+            NumberOfEmployees = numberOfEmployees,
             HourlyLaborRate = hourlyRate,
             ExtraCosts = extraCosts,
             CustomCharges = customCharges
@@ -98,7 +100,7 @@ public partial class NewEstimatePage : ContentPage
 
         var summary =
             $"Material Total:  {data.MaterialTotal:C2}\n" +
-            $"Labor Total:     {data.LaborTotal:C2}\n" +
+            $"Labor Total:     {data.LaborTotal:C2}  ({data.TotalLaborHours:N1} total hrs)\n" +
             $"Extra Costs:     {data.ExtraCosts:C2}\n";
 
         foreach (var charge in data.CustomCharges)
@@ -108,7 +110,7 @@ public partial class NewEstimatePage : ContentPage
 
         summary +=
             $"Subtotal:        {data.Subtotal:C2}\n" +
-            $"Margin (15%):    {data.MarginAmount:C2}\n" +
+            $"Margin (20%):    {data.MarginAmount:C2}\n" +
             $"Grand Total:     {data.GrandTotal:C2}";
 
         SummaryEditor.Text = summary;

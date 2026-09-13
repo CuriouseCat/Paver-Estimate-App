@@ -34,8 +34,11 @@
             <Label Text="Base Material Cost ($)" Margin="0,10,0,0" />
             <Entry x:Name="BaseMaterialCostEntry" Keyboard="Numeric" Placeholder="0.00" />
 
-            <Label Text="Labor Hours" Margin="0,10,0,0" />
+            <Label Text="Labor Hours (per employee)" Margin="0,10,0,0" />
             <Entry x:Name="LaborHoursEntry" Keyboard="Numeric" Placeholder="0" />
+
+            <Label Text="Number of Employees" Margin="0,10,0,0" />
+            <Entry x:Name="NumberOfEmployeesEntry" Keyboard="Numeric" Placeholder="1" />
 
             <Label Text="Hourly Labor Rate ($)" Margin="0,10,0,0" />
             <Entry x:Name="HourlyRateEntry" Keyboard="Numeric" Placeholder="0.00" />
