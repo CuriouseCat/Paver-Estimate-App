@@ -6,11 +6,44 @@ namespace AllAroundEstimates.Views;
 public partial class NewEstimatePage : ContentPage
 {
     private readonly List<(Entry Description, Entry Amount)> _customChargeRows = new();
+    private List<ServiceType> _serviceTypes = new();
     private EstimateData? _currentEstimate;
 
     public NewEstimatePage()
     {
         InitializeComponent();
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        try
+        {
+            _serviceTypes = ServiceTypeStorage.LoadServiceTypes();
+        }
+        catch
+        {
+            _serviceTypes = new List<ServiceType>();
+        }
+
+        ServiceTypePicker.ItemsSource = _serviceTypes.Select(t => t.Name).ToList();
+    }
+
+    private void OnServiceTypeSelected(object sender, EventArgs e)
+    {
+        var index = ServiceTypePicker.SelectedIndex;
+        if (index < 0 || index >= _serviceTypes.Count)
+            return;
+
+        var selected = _serviceTypes[index];
+        PaverPriceEntry.Text = selected.PaverPricePerSqFt.ToString("0.##");
+        HourlyRateEntry.Text = selected.HourlyLaborRate.ToString("0.##");
+    }
+
+    private async void OnManageTypesClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(nameof(ServiceTypesPage));
     }
 
     private void OnAddCustomChargeClicked(object sender, EventArgs e)
@@ -68,6 +101,11 @@ public partial class NewEstimatePage : ContentPage
             customCharges.Add(new CustomCharge { Description = description, Amount = amount });
         }
 
+        var serviceTypeIndex = ServiceTypePicker.SelectedIndex;
+        var serviceTypeName = serviceTypeIndex >= 0 && serviceTypeIndex < _serviceTypes.Count
+            ? _serviceTypes[serviceTypeIndex].Name
+            : string.Empty;
+
         return new EstimateData
         {
             EstimateNumber = _currentEstimate?.EstimateNumber ?? $"EST-{DateTime.Now:yyyyMMddHHmmss}",
@@ -75,6 +113,7 @@ public partial class NewEstimatePage : ContentPage
             CustomerPhone = CustomerPhoneEntry.Text ?? string.Empty,
             CustomerEmail = CustomerEmailEntry.Text ?? string.Empty,
             CustomerAddress = CustomerAddressEntry.Text ?? string.Empty,
+            ServiceTypeName = serviceTypeName,
             Date = DateTime.Now,
             SquareFootage = sqFt,
             PaverPricePerSqFt = paverPrice,
@@ -111,7 +150,13 @@ public partial class NewEstimatePage : ContentPage
         summary +=
             $"Subtotal:        {data.Subtotal:C2}\n" +
             $"Margin (20%):    {data.MarginAmount:C2}\n" +
-            $"Grand Total:     {data.GrandTotal:C2}";
+            $"Grand Total:     {data.GrandTotal:C2}\n" +
+            $"\n" +
+            $"Sales Tax (6%):    {data.SalesTaxAmount:C2}\n" +
+            $"Employee Tax (2.7%): {data.EmployeeTaxAmount:C2}\n" +
+            $"Total Due:         {data.TotalDue:C2}\n" +
+            $"\n" +
+            $"Corp. Tax (5.5%, not billed): {data.CorporateTaxAmount:C2}";
 
         SummaryEditor.Text = summary;
     }
@@ -131,7 +176,7 @@ public partial class NewEstimatePage : ContentPage
         {
             CustomerName = data.CustomerName,
             EstimateNumber = data.EstimateNumber,
-            TotalAmount = data.GrandTotal,
+            TotalAmount = data.TotalDue,
             IsChangeOrder = false
         });
 

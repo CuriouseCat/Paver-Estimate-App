@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AllAroundEstimates.Views.ServiceTypesPage"
+             Title="Service Types">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="8">
+
+            <Label Text="Service Types &amp; Rates" FontSize="20" FontAttributes="Bold" />
+            <Label Text="Set a preset Paver Price and Hourly Rate for each type of work. Picking a type on New Estimate fills these in automatically -- you can still change them per estimate."
+                   FontSize="12"
+                   TextColor="Gray" />
+
+            <VerticalStackLayout x:Name="TypesContainer" Spacing="10" Margin="0,16,0,0" />
+
+            <Button Text="+ Add Service Type"
+                    Clicked="OnAddTypeClicked"
+                    HorizontalOptions="Start"
+                    FontSize="12"
+                    Padding="10,6"
+                    Margin="0,10,0,0" />
+
+            <Button Text="Save"
+                    Clicked="OnSaveClicked"
+                    HorizontalOptions="Center"
+                    Margin="0,20,0,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
