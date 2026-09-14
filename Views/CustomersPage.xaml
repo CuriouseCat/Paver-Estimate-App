@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AllAroundEstimates.Views.CustomersPage"
+             Title="Customers">
+
+    <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="8">
+
+        <Label Grid.Row="0" Text="Search Customers" />
+        <Entry Grid.Row="1" x:Name="SearchEntry" Placeholder="Customer name..." TextChanged="OnSearchTextChanged" />
+        <Label Grid.Row="2" Text="Tap a customer to see their estimates." FontSize="12" TextColor="Gray" />
+
+        <CollectionView Grid.Row="3" x:Name="CustomersList" SelectionMode="Single" SelectionChanged="OnCustomerSelected">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <Border Stroke="LightGray" StrokeThickness="1" Padding="10,8" Margin="0,4">
+                        <Label Text="{Binding}" FontAttributes="Bold" />
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            <CollectionView.EmptyView>
+                <Label Text="No customers yet -- save an estimate first." TextColor="Gray" FontSize="12" Padding="10,8" />
+            </CollectionView.EmptyView>
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>

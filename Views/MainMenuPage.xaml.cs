@@ -47,6 +47,16 @@ public partial class MainMenuPage : ContentPage
         await Shell.Current.GoToAsync(nameof(TimeCardPage));
     }
 
+    private async void OnCustomersClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(nameof(CustomersPage));
+    }
+
+    private async void OnLoadEstimatesClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(nameof(SavedEstimatesPage));
+    }
+
     private async void OnUploadLogoClicked(object sender, EventArgs e)
     {
         try

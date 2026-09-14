@@ -59,6 +59,87 @@ public static class PdfGenerator
         document.GeneratePdf(stream);
     }
 
+    public static void GenerateInvoicePdf(Stream stream, EstimateData data, Invoice invoice)
+    {
+        EnsureFontsRegistered();
+
+        var documentType = invoice.Type == InvoiceType.Deposit ? "DEPOSIT INVOICE" : "FINAL INVOICE";
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.Letter);
+                page.Margin(30);
+                page.DefaultTextStyle(x => x.FontFamily(FontFamily).FontSize(11));
+
+                page.Header().Element(c => ComposeHeader(c, documentType, invoice.DateCreated));
+                page.Content().PaddingTop(15).Element(c => ComposeInvoiceBody(c, data, invoice));
+                page.Footer().Element(c => ComposeInvoiceFooter(c, invoice));
+            });
+        });
+
+        document.GeneratePdf(stream);
+    }
+
+    private static void ComposeInvoiceBody(IContainer container, EstimateData data, Invoice invoice)
+    {
+        container.Column(column =>
+        {
+            column.Item().Text($"Customer: {data.CustomerName}").Bold();
+            column.Item().Text($"Estimate #: {data.EstimateNumber}").FontSize(9).FontColor(Colors.Grey.Darken1);
+            if (!string.IsNullOrWhiteSpace(data.CustomerPhone))
+                column.Item().Text($"Phone: {data.CustomerPhone}").FontSize(9).FontColor(Colors.Grey.Darken1);
+            if (!string.IsNullOrWhiteSpace(data.CustomerEmail))
+                column.Item().Text($"Email: {data.CustomerEmail}").FontSize(9).FontColor(Colors.Grey.Darken1);
+            if (!string.IsNullOrWhiteSpace(data.CustomerAddress))
+                column.Item().Text($"Address: {data.CustomerAddress}").FontSize(9).FontColor(Colors.Grey.Darken1);
+
+            column.Item().PaddingTop(15).Text(invoice.Type == InvoiceType.Deposit
+                ? "This invoice requests a deposit toward the estimate total below."
+                : "This invoice requests final payment for the estimate total below.").FontSize(10);
+
+            column.Item().PaddingTop(15).Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(2);
+                });
+
+                void AddRow(string label, decimal value, bool bold = false)
+                {
+                    table.Cell().Element(CellStyle).Text(label);
+                    table.Cell().Element(CellStyle).AlignRight().Text(value.ToString("C2"));
+
+                    IContainer CellStyle(IContainer c)
+                    {
+                        var styled = c.PaddingVertical(6).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2);
+                        return bold ? styled.DefaultTextStyle(x => x.Bold()) : styled;
+                    }
+                }
+
+                AddRow("Estimate Total Due", data.TotalDue);
+                AddRow(invoice.Type == InvoiceType.Deposit ? "Deposit Amount Due" : "Balance Due", invoice.Amount, true);
+            });
+        });
+    }
+
+    private static void ComposeInvoiceFooter(IContainer container, Invoice invoice)
+    {
+        container.Column(column =>
+        {
+            column.Item().AlignRight().Width(230).Row(r =>
+            {
+                r.RelativeItem().Text("Amount Due:").Bold();
+                r.ConstantItem(90).AlignRight().Text(invoice.Amount.ToString("C2")).Bold();
+            });
+
+            column.Item().PaddingTop(35).Width(260).BorderBottom(1).BorderColor(Colors.Black);
+            column.Item().PaddingTop(2).Text("Customer Signature & Date").FontSize(9).FontColor(Colors.Grey.Darken1);
+        });
+    }
+
     /// <summary>
     /// QuestPDF defaults to a bundled font (Calibri-family) when no FontFamily is set explicitly.
     /// That font doesn't exist on Android/Linux, and QuestPDF throws when it can't resolve a
@@ -134,8 +215,6 @@ public static class PdfGenerator
             column.Item().Text($"Customer: {data.CustomerName}").Bold();
             column.Item().Text($"Estimate #: {data.EstimateNumber}").FontSize(9).FontColor(Colors.Grey.Darken1);
 
-            if (!string.IsNullOrWhiteSpace(data.ServiceTypeName))
-                column.Item().Text($"Service Type: {data.ServiceTypeName}").FontSize(9).FontColor(Colors.Grey.Darken1);
             if (!string.IsNullOrWhiteSpace(data.CustomerPhone))
                 column.Item().Text($"Phone: {data.CustomerPhone}").FontSize(9).FontColor(Colors.Grey.Darken1);
             if (!string.IsNullOrWhiteSpace(data.CustomerEmail))
@@ -178,7 +257,11 @@ public static class PdfGenerator
                         .BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2);
                 }
 
-                AddRow("Paver Material", $"{data.SquareFootage:N0} sq ft", data.PaverPricePerSqFt, data.SquareFootage * data.PaverPricePerSqFt);
+                foreach (var item in data.ServiceLineItems)
+                {
+                    var label = string.IsNullOrEmpty(item.ServiceTypeName) ? "Material" : item.ServiceTypeName;
+                    AddRow(label, $"{item.SquareFootage:N0} sq ft", item.PricePerSqFt, item.Total);
+                }
                 AddRow("Base Material Cost", "1", data.BaseMaterialCost, data.BaseMaterialCost);
                 AddRow($"Labor ({data.NumberOfEmployees:N0} employees)", $"{data.TotalLaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
                 AddRow("Extra Costs", "1", data.ExtraCosts, data.ExtraCosts);
@@ -409,12 +492,6 @@ public static class PdfGenerator
         canvas.DrawText($"Estimate #: {data.EstimateNumber}", Margin, y, TextPaint(9, DarkGray));
         y += 13;
 
-        if (!string.IsNullOrWhiteSpace(data.ServiceTypeName))
-        {
-            canvas.DrawText($"Service Type: {data.ServiceTypeName}", Margin, y, TextPaint(9, DarkGray));
-            y += 13;
-        }
-
         if (!string.IsNullOrWhiteSpace(data.CustomerPhone))
         {
             canvas.DrawText($"Phone: {data.CustomerPhone}", Margin, y, TextPaint(9, DarkGray));
@@ -433,7 +510,11 @@ public static class PdfGenerator
         y += 12;
 
         y = DrawTableHeader(canvas, y);
-        y = DrawTableRow(canvas, y, "Paver Material", $"{data.SquareFootage:N0} sq ft", data.PaverPricePerSqFt, data.SquareFootage * data.PaverPricePerSqFt);
+        foreach (var item in data.ServiceLineItems)
+        {
+            var label = string.IsNullOrEmpty(item.ServiceTypeName) ? "Material" : item.ServiceTypeName;
+            y = DrawTableRow(canvas, y, label, $"{item.SquareFootage:N0} sq ft", item.PricePerSqFt, item.Total);
+        }
         y = DrawTableRow(canvas, y, "Base Material Cost", "1", data.BaseMaterialCost, data.BaseMaterialCost);
         y = DrawTableRow(canvas, y, $"Labor ({data.NumberOfEmployees:N0} employees)", $"{data.TotalLaborHours:N1} hrs", data.HourlyLaborRate, data.LaborTotal);
         y = DrawTableRow(canvas, y, "Extra Costs", "1", data.ExtraCosts, data.ExtraCosts);
@@ -452,6 +533,56 @@ public static class PdfGenerator
         DrawTotalsRow(canvas, totalsY + 32, "Tax:", data.CombinedTaxAmount, bold: false);
         canvas.DrawLine(PageWidth - Margin - 230, totalsY + 40, PageWidth - Margin, totalsY + 40, LinePaint(1));
         DrawTotalsRow(canvas, totalsY + 56, "Total Due:", data.TotalDue, bold: true);
+        DrawSignatureLine(canvas);
+
+        document.FinishPage(page);
+        WriteDocumentToStream(document, stream);
+    }
+
+    public static void GenerateInvoicePdf(Stream stream, EstimateData data, Invoice invoice)
+    {
+        using var document = new PdfDocument();
+        using var pageInfo = new PdfDocument.PageInfo.Builder((int)PageWidth, (int)PageHeight, 1).Create();
+        var page = document.StartPage(pageInfo)!;
+        var canvas = page.Canvas!;
+
+        var documentType = invoice.Type == InvoiceType.Deposit ? "DEPOSIT INVOICE" : "FINAL INVOICE";
+        var y = DrawHeader(canvas, documentType, invoice.DateCreated);
+
+        y += 15;
+        canvas.DrawText($"Customer: {data.CustomerName}", Margin, y, TextPaint(11, bold: true));
+        y += 16;
+        canvas.DrawText($"Estimate #: {data.EstimateNumber}", Margin, y, TextPaint(9, DarkGray));
+        y += 13;
+
+        if (!string.IsNullOrWhiteSpace(data.CustomerPhone))
+        {
+            canvas.DrawText($"Phone: {data.CustomerPhone}", Margin, y, TextPaint(9, DarkGray));
+            y += 13;
+        }
+        if (!string.IsNullOrWhiteSpace(data.CustomerEmail))
+        {
+            canvas.DrawText($"Email: {data.CustomerEmail}", Margin, y, TextPaint(9, DarkGray));
+            y += 13;
+        }
+        if (!string.IsNullOrWhiteSpace(data.CustomerAddress))
+        {
+            canvas.DrawText($"Address: {data.CustomerAddress}", Margin, y, TextPaint(9, DarkGray));
+            y += 13;
+        }
+        y += 12;
+
+        var noteText = invoice.Type == InvoiceType.Deposit
+            ? "This invoice requests a deposit toward the estimate total below."
+            : "This invoice requests final payment for the estimate total below.";
+        canvas.DrawText(noteText, Margin, y, TextPaint(10));
+        y += 25;
+
+        DrawChangeOrderRow(canvas, ref y, "Estimate Total Due", data.TotalDue, bold: false);
+        DrawChangeOrderRow(canvas, ref y, invoice.Type == InvoiceType.Deposit ? "Deposit Amount Due" : "Balance Due", invoice.Amount, bold: true);
+
+        var totalsY = PageHeight - Margin - 60;
+        DrawTotalsRow(canvas, totalsY, "Amount Due:", invoice.Amount, bold: true);
         DrawSignatureLine(canvas);
 
         document.FinishPage(page);

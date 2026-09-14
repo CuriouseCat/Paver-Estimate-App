@@ -25,24 +25,29 @@
                 </VerticalStackLayout>
             </Border>
 
-            <Label Text="Service Type" Margin="0,12,0,0" />
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <Picker x:Name="ServiceTypePicker"
-                        Grid.Column="0"
-                        Title="Select a type (optional)..."
-                        SelectedIndexChanged="OnServiceTypeSelected" />
-                <Button Grid.Column="1"
-                        Text="Manage Types"
-                        Clicked="OnManageTypesClicked"
-                        FontSize="12"
-                        Padding="10,6" />
-            </Grid>
+            <Border Stroke="LightGray" StrokeThickness="1" Padding="12" Margin="0,12,0,0">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Service Lines" FontAttributes="Bold" VerticalOptions="Center" />
+                        <Button Grid.Column="1"
+                                Text="Manage Types"
+                                Clicked="OnManageTypesClicked"
+                                FontSize="12"
+                                Padding="10,6" />
+                    </Grid>
+                    <Label Text="Add a line for each type of work on this job -- e.g. an install portion and a repair portion, each at its own rate."
+                           FontSize="12"
+                           TextColor="Gray" />
 
-            <Label Text="Total Square Footage" Margin="0,10,0,0" />
-            <Entry x:Name="SquareFootageEntry" Keyboard="Numeric" Placeholder="0" />
+                    <VerticalStackLayout x:Name="ServiceLinesContainer" Spacing="10" Margin="0,6,0,0" />
 
-            <Label Text="Paver Price per Sq Ft ($)" Margin="0,10,0,0" />
-            <Entry x:Name="PaverPriceEntry" Keyboard="Numeric" Placeholder="0.00" />
+                    <Button Text="+ Add Service Line"
+                            Clicked="OnAddServiceLineClicked"
+                            HorizontalOptions="Start"
+                            FontSize="12"
+                            Padding="10,6" />
+                </VerticalStackLayout>
+            </Border>
 
             <Label Text="Base Material Cost ($)" Margin="0,10,0,0" />
             <Entry x:Name="BaseMaterialCostEntry" Keyboard="Numeric" Placeholder="0.00" />

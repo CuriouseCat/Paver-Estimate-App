@@ -5,7 +5,7 @@ namespace AllAroundEstimates.Views;
 
 public partial class ServiceTypesPage : ContentPage
 {
-    private readonly List<(Entry Name, Entry PaverPrice, Entry HourlyRate)> _rows = new();
+    private readonly List<(Entry Name, Entry Price, Entry HourlyRate)> _rows = new();
 
     public ServiceTypesPage()
     {
@@ -31,7 +31,7 @@ public partial class ServiceTypesPage : ContentPage
 
         foreach (var serviceType in serviceTypes)
         {
-            AddRow(serviceType.Name, serviceType.PaverPricePerSqFt, serviceType.HourlyLaborRate);
+            AddRow(serviceType.Name, serviceType.PricePerSqFt, serviceType.HourlyLaborRate);
         }
     }
 
@@ -40,10 +40,10 @@ public partial class ServiceTypesPage : ContentPage
         AddRow(string.Empty, 0, 0);
     }
 
-    private void AddRow(string name, decimal paverPrice, decimal hourlyRate)
+    private void AddRow(string name, decimal pricePerSqFt, decimal hourlyRate)
     {
         var nameEntry = new Entry { Placeholder = "Type name (e.g. Installation)", HorizontalOptions = LayoutOptions.Fill, Text = name };
-        var paverPriceEntry = new Entry { Placeholder = "Paver $/sqft", Keyboard = Keyboard.Numeric, WidthRequest = 100, Text = paverPrice.ToString("0.##") };
+        var priceEntry = new Entry { Placeholder = "$/sqft", Keyboard = Keyboard.Numeric, WidthRequest = 100, Text = pricePerSqFt.ToString("0.##") };
         var hourlyRateEntry = new Entry { Placeholder = "Hourly $", Keyboard = Keyboard.Numeric, WidthRequest = 90, Text = hourlyRate.ToString("0.##") };
 
         var removeButton = new Button
@@ -59,8 +59,8 @@ public partial class ServiceTypesPage : ContentPage
         nameRow.Add(nameEntry);
 
         var ratesRow = new HorizontalStackLayout { Spacing = 8 };
-        ratesRow.Add(new Label { Text = "Paver $/sqft:", VerticalOptions = LayoutOptions.Center, FontSize = 12 });
-        ratesRow.Add(paverPriceEntry);
+        ratesRow.Add(new Label { Text = "$/sqft:", VerticalOptions = LayoutOptions.Center, FontSize = 12 });
+        ratesRow.Add(priceEntry);
         ratesRow.Add(new Label { Text = "Hourly $:", VerticalOptions = LayoutOptions.Center, FontSize = 12 });
         ratesRow.Add(hourlyRateEntry);
         ratesRow.Add(removeButton);
@@ -83,20 +83,20 @@ public partial class ServiceTypesPage : ContentPage
         };
 
         TypesContainer.Children.Add(card);
-        _rows.Add((nameEntry, paverPriceEntry, hourlyRateEntry));
+        _rows.Add((nameEntry, priceEntry, hourlyRateEntry));
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
     {
         var serviceTypes = new List<ServiceType>();
 
-        foreach (var (nameEntry, paverPriceEntry, hourlyRateEntry) in _rows)
+        foreach (var (nameEntry, priceEntry, hourlyRateEntry) in _rows)
         {
             var name = nameEntry.Text?.Trim();
             if (string.IsNullOrWhiteSpace(name))
                 continue;
 
-            if (!decimal.TryParse(paverPriceEntry.Text, out var paverPrice) ||
+            if (!decimal.TryParse(priceEntry.Text, out var price) ||
                 !decimal.TryParse(hourlyRateEntry.Text, out var hourlyRate))
             {
                 await DisplayAlertAsync("Invalid Input", $"Please enter valid numbers for \"{name}\".", "OK");
@@ -106,7 +106,7 @@ public partial class ServiceTypesPage : ContentPage
             serviceTypes.Add(new ServiceType
             {
                 Name = name,
-                PaverPricePerSqFt = paverPrice,
+                PricePerSqFt = price,
                 HourlyLaborRate = hourlyRate
             });
         }

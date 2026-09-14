@@ -11,11 +11,12 @@ public class EstimateData
     public string CustomerPhone { get; set; } = string.Empty;
     public string CustomerEmail { get; set; } = string.Empty;
     public string CustomerAddress { get; set; } = string.Empty;
-    public string ServiceTypeName { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.Now;
 
-    public decimal SquareFootage { get; set; }
-    public decimal PaverPricePerSqFt { get; set; }
+    /// <summary>One or more service lines (e.g. an install portion and a repair portion in the
+    /// same job), each independently priced by its own service type's rate.</summary>
+    public List<ServiceLineItem> ServiceLineItems { get; set; } = new();
+
     public decimal BaseMaterialCost { get; set; }
     public decimal LaborHours { get; set; }
     public decimal HourlyLaborRate { get; set; }
@@ -23,7 +24,8 @@ public class EstimateData
     public decimal ExtraCosts { get; set; }
     public List<CustomCharge> CustomCharges { get; set; } = new();
 
-    public decimal MaterialTotal => (SquareFootage * PaverPricePerSqFt) + BaseMaterialCost;
+    public decimal ServiceLineItemsTotal => ServiceLineItems.Sum(i => i.Total);
+    public decimal MaterialTotal => ServiceLineItemsTotal + BaseMaterialCost;
     public decimal TotalLaborHours => LaborHours * NumberOfEmployees;
     public decimal LaborTotal => TotalLaborHours * HourlyLaborRate;
     public decimal CustomChargesTotal => CustomCharges.Sum(c => c.Amount);

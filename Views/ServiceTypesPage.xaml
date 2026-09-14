@@ -8,7 +8,7 @@
         <VerticalStackLayout Padding="20" Spacing="8">
 
             <Label Text="Service Types &amp; Rates" FontSize="20" FontAttributes="Bold" />
-            <Label Text="Set a preset Paver Price and Hourly Rate for each type of work. Picking a type on New Estimate fills these in automatically -- you can still change them per estimate."
+            <Label Text="Set a preset Price per Sq Ft and Hourly Rate for each type of work. Picking a type on a New Estimate service line fills these in automatically -- you can still change them per line."
                    FontSize="12"
                    TextColor="Gray" />
 

@@ -34,6 +34,14 @@
                     Clicked="OnTimeCardClicked"
                     WidthRequest="240" />
 
+            <Button Text="Customers"
+                    Clicked="OnCustomersClicked"
+                    WidthRequest="240" />
+
+            <Button Text="Load Saved Estimates"
+                    Clicked="OnLoadEstimatesClicked"
+                    WidthRequest="240" />
+
         </VerticalStackLayout>
 
         <Button Text="Upload Logo"
