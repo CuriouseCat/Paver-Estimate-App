@@ -40,6 +40,10 @@ public class EstimateData
     /// <summary>Charged to the customer and shown on their PDF, per owner instruction.</summary>
     public decimal EmployeeTaxAmount => GrandTotal * EmployeeTaxRate;
 
+    /// <summary>Sales Tax + Employee Tax combined -- the customer-facing PDF shows these as one
+    /// "Tax" line rather than itemizing them separately.</summary>
+    public decimal CombinedTaxAmount => SalesTaxAmount + EmployeeTaxAmount;
+
     /// <summary>Owner's own business tax obligation on this job -- internal reference only, never
     /// billed to the customer or shown on their PDF.</summary>
     public decimal CorporateTaxAmount => GrandTotal * CorporateTaxRate;

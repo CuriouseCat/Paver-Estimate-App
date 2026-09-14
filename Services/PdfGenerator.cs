@@ -198,7 +198,7 @@ public static class PdfGenerator
             // Margin and Corporate Tax are intentionally not itemized on the customer-facing PDF --
             // both are the owner's internal business figures, still factored into the numbers below
             // but never broken out as their own line here. Sales Tax and Employee Tax are billed to
-            // the customer, so they are shown.
+            // the customer, combined into a single "Tax" line rather than itemized separately.
             column.Item().AlignRight().Width(230).Column(totals =>
             {
                 totals.Item().Row(r =>
@@ -213,13 +213,8 @@ public static class PdfGenerator
                 });
                 totals.Item().PaddingTop(2).Row(r =>
                 {
-                    r.RelativeItem().Text("Sales Tax (6%):");
-                    r.ConstantItem(90).AlignRight().Text(data.SalesTaxAmount.ToString("C2"));
-                });
-                totals.Item().PaddingTop(2).Row(r =>
-                {
-                    r.RelativeItem().Text("Employee Tax (2.7%):");
-                    r.ConstantItem(90).AlignRight().Text(data.EmployeeTaxAmount.ToString("C2"));
+                    r.RelativeItem().Text("Tax:");
+                    r.ConstantItem(90).AlignRight().Text(data.CombinedTaxAmount.ToString("C2"));
                 });
                 totals.Item().PaddingTop(4).BorderTop(1).BorderColor(Colors.Black).PaddingTop(4).Row(r =>
                 {
@@ -450,14 +445,13 @@ public static class PdfGenerator
 
         // Margin and Corporate Tax are intentionally not itemized on the customer-facing PDF --
         // both are the owner's internal business figures. Sales Tax and Employee Tax are billed
-        // to the customer, so they're shown.
-        var totalsY = PageHeight - Margin - 118;
+        // to the customer, combined into a single "Tax" line rather than itemized separately.
+        var totalsY = PageHeight - Margin - 102;
         DrawTotalsRow(canvas, totalsY, "Subtotal:", data.Subtotal, bold: false);
         DrawTotalsRow(canvas, totalsY + 16, "Grand Total:", data.GrandTotal, bold: false);
-        DrawTotalsRow(canvas, totalsY + 32, "Sales Tax (6%):", data.SalesTaxAmount, bold: false);
-        DrawTotalsRow(canvas, totalsY + 48, "Employee Tax (2.7%):", data.EmployeeTaxAmount, bold: false);
-        canvas.DrawLine(PageWidth - Margin - 230, totalsY + 56, PageWidth - Margin, totalsY + 56, LinePaint(1));
-        DrawTotalsRow(canvas, totalsY + 72, "Total Due:", data.TotalDue, bold: true);
+        DrawTotalsRow(canvas, totalsY + 32, "Tax:", data.CombinedTaxAmount, bold: false);
+        canvas.DrawLine(PageWidth - Margin - 230, totalsY + 40, PageWidth - Margin, totalsY + 40, LinePaint(1));
+        DrawTotalsRow(canvas, totalsY + 56, "Total Due:", data.TotalDue, bold: true);
         DrawSignatureLine(canvas);
 
         document.FinishPage(page);
